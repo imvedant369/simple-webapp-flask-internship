@@ -1,70 +1,138 @@
-# Simple Web Application
+# Simple Flask Web Application with Docker and Kubernetes
 
-A minimal [Python Flask](https://flask.palletsprojects.com/) web application used as the demo app in the [KodeKloud Docker for Beginners](https://kodekloud.com/courses/docker-for-the-absolute-beginner-hands-on/) course.
+## Overview
 
-The app exposes two routes:
+This project is a simple Python Flask web application. It can be run locally, in Docker, and on a local Kubernetes cluster using Minikube.
+
+## Application Routes
 
 | Route | Response |
 |---|---|
 | `/` | `Welcome!` |
 | `/how-are-you` | `I am good, how about you?` |
 
-## Run manually (without Docker)
+## Project Files
 
-These steps assume a fresh machine.
+- `app.py` - Flask application and routes.
+- `requirements.txt` - Python dependencies.
+- `Dockerfile` - Instructions to build the Docker image.
+- `deployment.yaml` - Kubernetes Deployment configuration.
+- `service.yaml` - Kubernetes Service configuration.
+- `.gitignore` - Files and folders Git should ignore.
 
-1. Select an OS - Ubuntu
+## Run Locally
 
-2. Update the package index:
+Install the dependencies and start the application:
 
-   ```bash
-   sudo apt-get update
-   ```
+```bash
+pip install -r requirements.txt
+python app.py
+```
 
-3. Install Flask (this also pulls in Python 3):
-
-   ```bash
-   sudo apt-get install -y python3-flask
-   ```
-
-4. Set the Flask app environment variable:
-
-   ```bash
-   export FLASK_APP=app.py
-   ```
-
-5. Start the application:
-
-   ```bash
-   flask run --host=0.0.0.0
-   ```
-
-Then open `http://localhost:5000` and `http://localhost:5000/how-are-you` in a browser.
+Open `http://localhost:5000` in your browser.
 
 ## Run with Docker
 
+Build the image:
+
 ```bash
-git clone https://github.com/mmumshad/simple-webapp-flask.git
-cd simple-webapp-flask
-docker build -t simple-webapp-flask .
-docker run -p 5000:5000 simple-webapp-flask
+docker build -t internship-flask:v1 .
 ```
 
-Then open `http://localhost:5000` and `http://localhost:5000/how-are-you` in a browser.
+Run the container:
 
-## The Dockerfile
-
-```dockerfile
-FROM ubuntu
-
-RUN apt-get update
-RUN apt-get install -y python3-flask
-
-COPY app.py /opt/app.py
-
-ENV FLASK_APP=/opt/app.py
-
-ENTRYPOINT ["flask", "run", "--host=0.0.0.0"]
+```bash
+docker run --rm -p 5000:5000 internship-flask:v1
 ```
 
-Each instruction mirrors one of the manual steps above — making it easy to see how a Dockerfile is just an automated install script.
+Test the application at:
+
+- `http://localhost:5000/`
+- `http://localhost:5000/how-are-you`
+
+## Run with Kubernetes and Minikube
+
+Make sure Docker, kubectl, and Minikube are installed and that Minikube is running.
+
+If the image has not yet been built, build it:
+
+```bash
+docker build -t internship-flask:v1 .
+```
+
+Load the image into Minikube:
+
+```bash
+minikube image load internship-flask:v1
+```
+
+Create the Deployment and Service:
+
+```bash
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+```
+
+Check the resources:
+
+```bash
+kubectl get deployments,pods,services
+```
+
+Access the application through the Kubernetes Service:
+
+```bash
+minikube service internship-flask --url
+```
+
+Keep this command's terminal open while using the URL it prints. Append `/how-are-you` to the URL to test the second route.
+
+## Stop and Clean Up
+
+To remove the Kubernetes resources created for this project:
+
+```bash
+kubectl delete -f service.yaml
+kubectl delete -f deployment.yaml
+```
+
+Only run these deletion commands when you intentionally want to remove the project from Kubernetes.
+
+## Dockerfile
+
+The Dockerfile starts with Ubuntu, installs Flask, copies the application into the image, and starts the Flask development server.
+
+This setup is intended for learning and local development, not production deployment.
+
+## Kubernetes Experiments and Results
+
+### 1. Self-Healing
+
+I deleted a running Pod managed by the Deployment. Kubernetes automatically created a replacement Pod to maintain the desired number of replicas.
+
+**Result:** The Deployment restored the required Pod automatically.
+
+### 2. Scaling
+
+I tested scaling the application from 1 replica to 2 replicas, then to 4 replicas, and finally scaled it back down to 1 replica.
+
+**Result:** Kubernetes created additional Pods when scaling up and removed extra Pods when scaling down.
+
+### 3. Minikube Stop and Restart
+
+I stopped Minikube and started it again. After the cluster restarted, I checked the Deployment, Pods, and Service and tested the application again.
+
+**Result:** The application became accessible again after the cluster restarted.
+
+### Lessons Learned
+
+- A Deployment maintains the desired number of application Pods.
+- Kubernetes can replace a deleted Pod automatically.
+- Replica counts can be increased or decreased as required.
+- Minikube can be stopped and restarted without intentionally deleting the cluster.
+- A Kubernetes Service provides a way to access the application.
+
+### Evidence
+
+Screenshots and screen recordings for the experiments are stored in the `screenshots/` and `videos/` folders, respectively, when captured and saved.
+

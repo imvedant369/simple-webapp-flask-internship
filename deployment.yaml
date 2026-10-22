@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internship-flask
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: internship-flask
+  template:
+    metadata:
+      labels:
+        app: internship-flask
+    spec:
+      containers:
+        - name: flask
+          image: internship-flask:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
